@@ -2,6 +2,38 @@
 #include "CommandLine.h"
 #include "Logic/RoomManager.h"
 #include "Logic/Room.h"
+
+
+#include <windows.h>
+#include <wininet.h>
+#include <string>
+#include <iostream>
+
+std::string real_ip() {
+
+    HINTERNET net = InternetOpen(L"IP retriever",
+        INTERNET_OPEN_TYPE_PRECONFIG,
+        NULL,
+        NULL,
+        0);
+
+    HINTERNET conn = InternetOpenUrl(net,
+        L"http://myexternalip.com/raw",
+        NULL,
+        0,
+        INTERNET_FLAG_RELOAD,
+        0);
+
+    char buffer[4096];
+    DWORD read;
+
+    InternetReadFile(conn, buffer, sizeof(buffer) / sizeof(buffer[0]), &read);
+    InternetCloseHandle(net);
+
+    return std::string(buffer, read);
+}
+
+
 int main() {
     using namespace Room;
     // Create a server endpoint
@@ -18,7 +50,7 @@ int main() {
 
         // Initialize Asio
         pong_server.init_asio();
-
+        
         // Register our message handler
         pong_server.set_message_handler(bind(&OnMessage, &pong_server, ::_1, ::_2));
         pong_server.set_open_handler(bind(OnOpen,&pong_server,::_1));
@@ -26,7 +58,7 @@ int main() {
         // Listen on port 9002
         pong_server.listen(9002);
 
-        std::cout << "Server Started\n";
+        std::cout << "Server Started\n" << real_ip() << "\n";
 
         // Start the server accept loop
         pong_server.start_accept();
